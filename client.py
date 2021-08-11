@@ -1,9 +1,11 @@
+#Cliente.py
+#Sara Zavala
+
 import slixmpp
 import aiodns
 import asyncio 
 
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
 
 class Client(slixmpp.ClientXMPP):
     def __init__(self):
@@ -24,7 +26,7 @@ class Client(slixmpp.ClientXMPP):
         if msg['type'] in ('chat', 'normal'):
             msg.reply("Thanks for sending\n%(body)s" % msg).send()
 
-
+#xmpp is gonna be our client object
 xmpp = Client()
 xmpp.register_plugin('xep_0030')  # Service Discovery
 xmpp.register_plugin('xep_0004')  # Data Forms
@@ -32,6 +34,7 @@ xmpp.register_plugin('xep_0060')  # PubSub
 xmpp.register_plugin('xep_0199')  # XMPP Ping
 
 # Connect to the XMPP server and start processing XMPP stanzas.
+#Connection
 xmpp.connect()
 xmpp.process(forever=False)
 print("1. Ver conectados")
