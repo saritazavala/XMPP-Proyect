@@ -1,96 +1,120 @@
-from re import X
+import logging
 import threading
 import slixmpp
+import base64, time
 from slixmpp.exceptions import IqError, IqTimeout
-#Usando ejemplo de xmpp obtenido de https://docplayer.net/60687805-Slixmpp-documentation.html
+from slixmpp.xmlstream.stanzabase import ET, ElementBase 
+from getpass import getpass
+from argparse import ArgumentParser
 
 
-class register_to_server(slixmpp.ClientXMPP):
+class Client(slixmpp.ClientXMPP):
+    def __init__(self, jid, password, recipient, message):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.add_event_handler("session_start", self.start)
+        self.add_event_handler("message", self.message)
+
+        self.recipient = recipient
+        self.msg = message
+
+    async def start(self, event):
+        #Send presence
+        self.send_presence()
+        await self.get_roster()
+
+        #Send message of type chat
+        self.send_message(mto=self.recipient,mbody=self.msg,mtype='chat')
+
+    def message(self, msg):
+        if msg['type'] in ('chat'):
+            recipient = msg['to']
+            body = msg['body']
+            print(str(recipient) +  ": " + str(body))
+            message = input("Write the message: ")
+            self.send_message(mto=self.recipient,mbody=message)
+
+
+class Register(slixmpp.ClientXMPP):
     def __init__(self, jid, password):
         slixmpp.ClientXMPP.__init__(self, jid, password)
-        self.add_event_handler('register', self.register)
-        self.add_event_handler('disconnected', self.got_diss)
-    
-    def got_diss(self, event):
-        print('Got disconnected')
+        self.add_event_handler("session_start", self.start)
+        self.add_event_handler("register", self.register)
+        self.user = jid
 
-        
-    def register(self, event):
-        resp = self.Iq()
-        resp['type'] = 'set'
-        resp['register']['username'] = self.boundjid.user
-        resp['register']['password'] = self.password
-    
-        try:
-            resp.send()
-            print("Cuenta creada con exito")
-
-        except IqError:
-            print("No se ha podido crear la cuenta")
-
-
-        except IqTimeout:
-            print("Sin respuesta del servidor")
-
-        self.disconnect()
-
-class my_client(slixmpp.ClientXMPP):
-    def __init__(self, jid, password):
-        slixmpp.ClientXMPP.__init__(self, jid, password)
-        self.add_event_handler('disconnected', self.got_diss)
-        self.add_event_handler('failed_auth', self.failed)
-        self.add_event_handler('error', self.handle_error)
-        self.register_plugin('xep_0030')
-        self.register_plugin('xep_0004')
-        self.register_plugin('xep_0066')
-        self.register_plugin('xep_0077')
-        self.register_plugin('xep_0050')
-        self.register_plugin('xep_0047')
-        self.register_plugin('xep_0231')
-        self.register_plugin('xep_0045')
-        self.register_plugin('xep_0095')
-        self.register_plugin('xep_0096')
-        self.register_plugin('xep_0047')
-
-        self['xep_0077'].force_registration = True
-
-        self.received = set()
-        self.presences_received = threading.Event()
-
-    def handle_error(self):
-        print("ERROR DETECTADO")
-        self.disconnect()
-
-
-
-    def failed(self):
-        print("LAS CREDENCIALES INGRESADAS SON INCORRECTAS")
-        self.disconnect()
-
-    def start(self):
+    def start(self, event):
         self.send_presence()
         self.get_roster()
-
-        self.send_message(mto=self.recipient, mbody=self.msg)
-        self.disconnect()
-    
-    def delete(self):
-        resp = self.Iq()
-        resp['type'] = 'set'
-        resp['from'] = self.boundjid.full
-        resp['register']['remove'] = True
-
-        try:
-            resp.send()
-            print("Cuenta "+self.boundjid+" eliminada con exito")
-
-        except IqError as err:
-            print("No se ha podido eliminar la cuenta", self.boundjid)
-            self.disconnect()
-
-        except IqTimeout:
-            print("No se recibio respuesta del servidor")
-            self.disconnect()
-
+        
     def got_diss(self, event):
         print('Got disconnected')
+
+    def register(self, iq):
+        iq = self.Iq()
+        iq['type'] = 'set'
+        iq['register']['username'] = self.boundjid.user
+        iq['register']['password'] = self.password
+
+        try:
+            iq.send()
+            print("Nueva cuenta creadas", self.boundjid)
+            self.disconnect()
+        
+        except IqError as e:
+            print("No se ha podido crear la cuenta")
+            self.disconnect()
+        
+        except IqTimeout:
+            print("TimeOut del server")
+            self.disconnect()
+        
+        except Exception as e:
+            print(e)
+            self.disconnect()
+
+class Client_join_group(slixmpp.ClientXMPP):
+    
+    def __init__(self, jid, password, room_jid, room_ak):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+   
+        self.add_event_handler("session_start", self.start)
+
+        self.add_event_handler("groupchat_message", self.muc_message)
+        self.add_event_handler("muc::%s::got_online" % self.room, self.muc_online)
+
+
+        # self.register_plugin('xep_0030')
+        # self.register_plugin('xep_0199')
+        # self.register_plugin('xep_0045')
+        # self.register_plugin('xep_0096')
+        self.room = room_jid
+        self.ak = room_ak
+
+    async def start(self, event):
+        #Send presence
+        self.send_presence()
+        await self.get_roster()
+        try:
+            
+            self.plugin['xep_0045'].join_muc(self.room, self.ak)
+            print("Bienvenido a tu nuevo grupo!")
+        except IqError:
+            print("Error encontrado")
+        except IqTimeout:
+            print("Timeout del server")
+        self.disconnect()           
+
+class Client_subscribe(slixmpp.ClientXMPP):
+    
+    def __init__(self, jid, password, to):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.add_event_handler("session_start", self.start)
+        self.to = to
+
+    async def start(self, event):
+        self.send_presence()
+        await self.get_roster()
+        try:
+            self.send_presence_subscription(pto=self.to)        #Subscribe to user
+        except IqTimeout:
+            print("Timeout") 
+        self.disconnect()
