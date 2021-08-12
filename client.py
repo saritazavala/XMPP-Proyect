@@ -61,6 +61,8 @@ class my_client(slixmpp.ClientXMPP):
         print("ERROR DETECTADO")
         self.disconnect()
 
+
+
     def failed(self):
         print("LAS CREDENCIALES INGRESADAS SON INCORRECTAS")
         self.disconnect()
@@ -68,6 +70,9 @@ class my_client(slixmpp.ClientXMPP):
     def start(self):
         self.send_presence()
         self.get_roster()
+
+        self.send_message(mto=self.recipient, mbody=self.msg)
+        self.disconnect()
     
     def delete(self):
         resp = self.Iq()

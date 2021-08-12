@@ -26,6 +26,9 @@ def online_user(event):
 
         if opt == "1":
             pass
+
+        elif opt == "4":
+            pass
         
         elif opt == "9":
             xmpp.disconnect()
