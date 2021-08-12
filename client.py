@@ -1,43 +1,91 @@
-#Cliente.py
-#Sara Zavala
-
+from re import X
+import threading
 import slixmpp
-import aiodns
-import asyncio 
+from slixmpp.exceptions import IqError, IqTimeout
+#Usando ejemplo de xmpp obtenido de https://docplayer.net/60687805-Slixmpp-documentation.html
 
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-class Client(slixmpp.ClientXMPP):
-    def __init__(self):
-        slixmpp.ClientXMPP.__init__(self, "zav18893@alumchat.xyz", "123")
-        self.to = "echobot@alumchat.xyz"
-        self.message = "Hola bot :v"
-        self.add_event_handler("session_start", self.start)
-        self.add_event_handler("message", self.message)
+class register_to_server(slixmpp.ClientXMPP):
+    def __init__(self, jid, password):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.add_event_handler('register', self.register)
+        self.add_event_handler('disconnected', self.got_diss)
+    
+    def got_diss(self, event):
+        print('Got disconnected')
 
-    async def start(self, event):
-        print("Inicio de sesion")
-        self.send_presence()
-        await self.get_roster()
-        self.send_message(mto=self.to, mbody=self.message, mtype='chat')
+        
+    def register(self, event):
+        resp = self.Iq()
+        resp['type'] = 'set'
+        resp['register']['username'] = self.boundjid.user
+        resp['register']['password'] = self.password
+    
+        try:
+            resp.send()
+            print("Cuenta creada con exito")
+
+        except IqError:
+            print("No se ha podido crear la cuenta")
+
+
+        except IqTimeout:
+            print("Sin respuesta del servidor")
+
         self.disconnect()
 
-    def message(self, msg):
-        if msg['type'] in ('chat', 'normal'):
-            msg.reply("Thanks for sending\n%(body)s" % msg).send()
+class my_client(slixmpp.ClientXMPP):
+    def __init__(self, jid, password):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.add_event_handler('disconnected', self.got_diss)
+        self.add_event_handler('failed_auth', self.failed)
+        self.add_event_handler('error', self.handle_error)
+        self.register_plugin('xep_0030')
+        self.register_plugin('xep_0004')
+        self.register_plugin('xep_0066')
+        self.register_plugin('xep_0077')
+        self.register_plugin('xep_0050')
+        self.register_plugin('xep_0047')
+        self.register_plugin('xep_0231')
+        self.register_plugin('xep_0045')
+        self.register_plugin('xep_0095')
+        self.register_plugin('xep_0096')
+        self.register_plugin('xep_0047')
 
-#xmpp is gonna be our client object
-xmpp = Client()
-xmpp.register_plugin('xep_0030')  # Service Discovery
-xmpp.register_plugin('xep_0004')  # Data Forms
-xmpp.register_plugin('xep_0060')  # PubSub
-xmpp.register_plugin('xep_0199')  # XMPP Ping
+        self['xep_0077'].force_registration = True
 
-# Connect to the XMPP server and start processing XMPP stanzas.
-#Connection
-xmpp.connect()
-xmpp.process(forever=False)
-print("1. Ver conectados")
-print(" 2. Mandar mensaje privado")
-print("3. Madar mensaje general")
+        self.received = set()
+        self.presences_received = threading.Event()
 
+    def handle_error(self):
+        print("ERROR DETECTADO")
+        self.disconnect()
+
+    def failed(self):
+        print("LAS CREDENCIALES INGRESADAS SON INCORRECTAS")
+        self.disconnect()
+
+    def start(self):
+        self.send_presence()
+        self.get_roster()
+    
+    def delete(self):
+        resp = self.Iq()
+        resp['type'] = 'set'
+        resp['from'] = self.boundjid.full
+        resp['register']['remove'] = True
+
+        try:
+            resp.send()
+            print("Cuenta "+self.boundjid+" eliminada con exito")
+
+        except IqError as err:
+            print("No se ha podido eliminar la cuenta", self.boundjid)
+            self.disconnect()
+
+        except IqTimeout:
+            print("No se recibio respuesta del servidor")
+            self.disconnect()
+
+    def got_diss(self, event):
+        print('Got disconnected')
