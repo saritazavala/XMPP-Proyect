@@ -7,94 +7,40 @@ from slixmpp.xmlstream.stanzabase import ET, ElementBase
 from getpass import getpass
 from argparse import ArgumentParser
 
+'''
+---------------------------------------------------------------------------
 
-class login_manager(slixmpp.ClientXMPP):
-    def __init__(self, jid, password):
-        slixmpp.ClientXMPP.__init__(self, jid, password)
-        self.add_event_handler('disconnected', self.got_diss)
-        self.add_event_handler('failed_auth', self.failed)
-        self.add_event_handler('error', self.handle_error)
-        self.register_plugin('xep_0030')
-        self.register_plugin('xep_0004')
-        self.register_plugin('xep_0066')
-        self.register_plugin('xep_0077')
-        self.register_plugin('xep_0050')
-        self.register_plugin('xep_0047')
-        self.register_plugin('xep_0231')
-        self.register_plugin('xep_0045')
-        self.register_plugin('xep_0095')
-        self.register_plugin('xep_0096')
-        self.register_plugin('xep_0047')
-        self['xep_0077'].force_registration = True
-        self.received = set()
-        self.presences_received = threading.Event()
+                CHAPTER 3.1
+        Slixmpp Quickstart - Echo Bot
+https://slixmpp.readthedocs.io/_/downloads/en/slix-1.6.0/pdf/
 
-    def handle_error(self):
-        print("ERROR DETECTADO")
-        self.disconnect()
+            Also it was based in this example
+https://lab.louiz.org/poezio/slixmpp/-/blob/master/examples/register_account.py
 
+-------------------------------------------------------------------------
 
-    def failed(self):
-        print("Credenciales Inorrectas")
-        self.disconnect()
+'''
+#This class helos to register new users
+#All the bases are in the previous link
 
-    def start(self):
-        self.send_presence()
-        self.get_roster()
-        self.send_message(mto=self.recipient, mbody=self.msg)
-        self.disconnect()
-    
-    def delete(self):
-        resp = self.Iq()
-        resp['type'] = 'set'
-        resp['from'] = self.boundjid.full
-        resp['register']['remove'] = True
-        try:
-            resp.send()
-            print("Cuenta "+self.boundjid+" eliminada con exito")
-
-        except IqError as err:
-            print("No se ha podido eliminar la cuenta", self.boundjid)
-            self.disconnect()
-
-        except IqTimeout:
-            print("No se recibio respuesta del servidor")
-            self.disconnect()
-
-    def got_diss(self, event):
-        print('Got disconnected')
-
-class Client(slixmpp.ClientXMPP):
-    def __init__(self, jid, password, recipient, message):
-        slixmpp.ClientXMPP.__init__(self, jid, password)
-        self.add_event_handler("session_start", self.start)
-        self.add_event_handler("message", self.message)
-        self.recipient = recipient
-        self.msg = message
-
-    async def start(self, event):
-        self.send_presence()
-        await self.get_roster()
-        self.send_message(mto=self.recipient,mbody=self.msg,mtype='chat')
-
-    def message(self, msg):
-        if msg['type'] in ('chat'):
-            recipient = msg['to']
-            body = msg['body']
-            print(str(recipient) +  ": " + str(body))
-            message = input("Write the message: ")
-            self.send_message(mto=self.recipient,mbody=message)
-
-class Register(slixmpp.ClientXMPP):
+class register_to_server(slixmpp.ClientXMPP):
     def __init__(self, jid, password):
         slixmpp.ClientXMPP.__init__(self, jid, password)
         self.add_event_handler('register', self.register)
         self.add_event_handler('disconnected', self.got_diss)
+        self.register_plugin('xep_0030')  #Service Discovery
+        self.register_plugin('xep_0004')  #Data forms
+        self.register_plugin('xep_0066')  #Out-of-band Data
+        self.register_plugin('xep_0077')  #In-band Registration
+        self.register_plugin('xep_0045')  #Multi user chat
+        self.register_plugin('xep_0199')  #XMPP Ping
+        self['xep_0077'].force_registration = True
     
+    #Function for disconection
     def got_diss(self, event):
         print('Got disconnected')
-
-        
+    
+    #Function for register new user & password
     def register(self, event):
         resp = self.Iq()
         resp['type'] = 'set'
@@ -103,16 +49,155 @@ class Register(slixmpp.ClientXMPP):
     
         try:
             resp.send()
-            print("Cuenta creada con exito")
-
+            print("Account was succesfuly")
         except IqError:
-            print("No se ha podido crear la cuenta")
-
-
+            print("There was an error creating the account")
         except IqTimeout:
-            print("Sin respuesta del servidor")
+            print("Server Timeout")
 
         self.disconnect()
+
+'''
+            # This module provides XMPP functionality that
+            # is specific to client connections.
+            # Part of Slixmpp: The Slick XMPP Library
+            # :copyright: (c) 2011 Nathanael C. Fritz
+            # :license: MIT, see LICENSE for more details
+
+https://lab.louiz.org/poezio/slixmpp/-/blob/master/slixmpp/clientxmpp.py
+
+
+'''
+class Client(slixmpp.ClientXMPP):
+    def __init__(self, jid, password):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.jid = jid
+        self.password = password
+        self.add_event_handler('disconnected', self.got_diss)
+        self.add_event_handler('failed_auth', self.failed)
+        self.add_event_handler('error', self.handle_error)
+        self.add_event_handler('presence_subscribed', self.new_subscribed)
+        self.add_event_handler('message', self.message)
+        self.add_event_handler('got_offline', self.handle_offline)
+        self.add_event_handler('got_online', self.handle_online)
+        self.register_plugin('xep_0004') #Data Forms
+        self.register_plugin('xep_0030') #Service Discovery
+        self.register_plugin('xep_0045') #Multi user chat
+        self.register_plugin('xep_0047') #In-band Bytestreams
+        self.register_plugin('xep_0050') #Ad-Hoc Commands
+        self.register_plugin('xep_0066') #Out of Band Data
+        self.register_plugin('xep_0077') #In-band Registration
+        self.register_plugin('xep_0085') #Chat State Notifications
+        self.register_plugin('xep_0092') #Software version
+        self.register_plugin('xep_0199') #Xmpp ping
+        self.register_plugin('xep_0231') #Bits of Binary
+        self['xep_0077'].force_registration = True
+# -------------------------------------------------------------------------
+#This function has the ability of sending a mesasge to an user
+#This is basen in the privMesasge function of the main link
+    def message(self, msg):
+        sender = str(msg['from'])
+        jid = sender.split('/')[0]
+        username = jid.split('@')[0]
+
+        if msg['type'] in ('chat', 'normal'): print('Nuevo mensaje de: '+username+' dice: '+msg['body'])
+
+        elif msg['type'] in ('groupchat', 'normal'):
+            nick  = sender.split('/')[1]
+            if jid != self.jid:
+                print('Nuevo mensaje del grupo: '+nick+' de: '+jid+' dice: '+msg['body'])
+
+#Handle Errors
+    def handle_error(self, event):
+        print("An error was detected")
+        self.disconnect()
+
+#Handle when an user gets offline
+    def handle_offline(self, presence):
+        print(str(presence['from']).split('/')[0] + ' got disconected')
+
+#Handle when an user gets online
+    def handle_online(self, presence):
+        print(str(presence['from']).split('/')[0] + ' got conected')
+
+# When the credentials are incorrect
+    def failed(self, event):
+        print("Username or password is incorrect")
+    
+
+    def start(self):
+        self.send_presence()
+        self.get_roster()    
+
+    def got_diss(self, event):
+        print('Got disconnected')
+
+# Message to user to know that there is new friend
+# -------------------------------------------------------------
+    def new_subscribed(self, presence):
+        print(presence.get_from()+' has added you as a friend!')
+
+# ---------------------------------------------------------
+# https://lab.louiz.org/poezio/slixmpp/-/blob/master/slixmpp/plugins/xep_0016/stanza.py
+# -------------------------------------------------------------------------------
+    def set_presence(self, show, status):
+        self.send_presence(show, status)
+        self.get_roster()
+        time.sleep(3)
+    
+# ----------------------------------------------------------------------------
+# https://lab.louiz.org/poezio/slixmpp/-/blob/master/examples/pubsub_events.py
+# ----------------------------------------------------------------------------
+
+    def delete(self):
+        resp = self.Iq()
+        resp['type'] = 'set'
+        resp['from'] = self.boundjid.full
+        resp['register']['remove'] = True
+
+        try:
+            print("The account of", self.boundjid.bare, "has been deleted")
+            resp.send()
+        except IqError as err:
+            print("There was an error deleting the account")
+            self.disconnect()
+        except IqTimeout:
+            print("Server TimeOut")
+            self.disconnect()
+    
+# Add User as a friend
+    def add_friend(self, JID):
+        self.send_presence_subscription(pto=JID, ptype='subscribe', pfrom = self.boundjid.bare)
+        self.get_roster()
+        time.sleep(3)
+
+class PrivMsg(slixmpp.ClientXMPP):
+    def __init__(self, jid, password, uname, msg):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.uname = uname
+        self.msg = msg
+
+        self.add_event_handler('session_start', self.start)
+        self.add_event_handler('presence_subscribed', self.new_subscribed)
+
+        self.register_plugin('xep_0030')
+        self.register_plugin('xep_0199')
+        self.register_plugin('xep_0045')
+        self.register_plugin('xep_0096')
+
+    async def start(self, event):
+        self.send_presence()
+        await self.get_roster()
+        self.send_message(mto=self.uname,
+                          mbody=self.msg,
+                          mtype='chat')
+        
+        print("Your message was sent correctly")
+    
+    #Menejo de nuevas subscripciones
+    def new_subscribed(self, presence):
+        print(presence.get_from()+' added you as a friend')
+
 
 class chat_group(slixmpp.ClientXMPP):
     
@@ -157,75 +242,143 @@ class subscribe(slixmpp.ClientXMPP):
             print("Timeout") 
         self.disconnect()
 
-class Users(slixmpp.ClientXMPP):
 
-    def __init__(self, jid, password, user=None, show=True, message=""):
-        slixmpp.ClientXMPP.__init__(self, jid, password)
-        self.add_event_handler("session_start", self.start)
-        self.presences = threading.Event()
-        self.users = []
-        self.user = user
+
+
+# ------------------------
+class User():
+    def __init__(self, jid, show, status, subscription, username):
+        self.jid = jid
         self.show = show
-        self.message = message
+        self.status = status
+        self.subscription = subscription
+        self.username = username
+
+#Class for getting Rooster
+class GetRoster(slixmpp.ClientXMPP):
+    
+    def __init__(self, jid, password, u_search = None):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.roster = {}
+        self.u_search = u_search
+        self.add_event_handler('session_start', self.start)
+        self.add_event_handler('changed_status', self.wait_for_presences)
+        self.add_event_handler('disconnected', self.got_diss)
+        self.register_plugin('xep_0030')
+        self.register_plugin('xep_0199')
+        self.register_plugin('xep_0045')
+        self.register_plugin('xep_0096')
+
+        self.received = set()
+        self.presences_received = asyncio.Event()
+
+    def got_diss(self, event):
+        print('Got disconnected')
+        quit()
+        
 
     async def start(self, event):
-        self.send_presence()
-        await self.get_roster()
-        all_users = []
         try:
-            self.get_roster()
-        except IqError as e:
-            print("Error encontrado")
+            await self.get_roster()
+        except IqError as err:
+            print('Error: %s' % err.iq['error']['condition'])
         except IqTimeout:
-            print("Timeout del server")
-        self.presences.wait(3)
+            print('Error: Request timed out')
+        self.send_presence()
 
-        my_roster = self.client_roster.groups()
-        for group in my_roster:
-            for user in my_roster[group]:
-                status = show = answer = priority = ''
-                self.users.append(user)
-                subs = self.client_roster[user]['subscription']                         
-                conexions = self.client_roster.presence(user)                           
-                username = self.client_roster[user]['name']                            
-                for answer, pres in conexions.items():
+        print('Waiting for presence updates...')
+        await asyncio.sleep(5)
+#-------------------------------------------------------------------
+        print('El roster de %s es:' % self.boundjid.bare)
+        groups = self.client_roster.groups()
+        for group in groups:
+            for jid in groups[group]:
+                status = ''
+                show = ''
+                sub = ''
+                name = ''
+                sub = self.client_roster[jid]['subscription']
+                conexion = self.client_roster.presence(jid)
+                name = self.client_roster[jid]['name']
+                for answer, pres in conexion.items():
                     if pres['show']:
-                        show = pres['show']                                             
+                        show = pres['show']
                     if pres['status']:
-                        status = pres['status']                                         
-                    if pres['priority']:
-                        priority = pres['priority']                                    
-                all_users.append([user,subs,status,username,priority])
-                self.users = all_users
-
+                        status = pres['status']
+                self.roster[jid] = User(jid, show, status, sub, name)
         
-        if(self.show):
-            if(not self.user):
-                if len(all_users)==0:
-                    print("No hay nadie agregado")
-                else:
-                    print("--- Agregados ---")
-                for contact in all_users:
-                    print('\tJID:' + contact[0] + 
-                    '\t\tSUBSCRIPTION:' + 
-                    contact[1] + 
-                    '\t\tSTATUS:' +
-                     contact[2])
+# -----------------------------------------------------------------------       
+        if(not self.u_search):
+            if len(self.roster) == 0:
+                print('No hay usuario conectados')
             else:
-                for contact in all_users:
-                    if(contact[0]==self .user):
-                        print('\tJID:' + contact[0] + 
-                        '\n\tSUBSCRIPTION:' + 
-                        contact[1] + 
-                        '\n\tSTATUS:' + 
-                        contact[2] + 
-                        '\n\tUSERNAME:' + 
-                        contact[3] + 
-                        '\n\tPRIORITY:' + 
-                        contact[4])
+                for key in self.roster.keys():
+                    friend = self.roster[key]
+                    print('- Jid: '+friend.jid+
+                    ' Username:'+friend.username+
+                    ' Show:'+friend.show+
+                    ' Status:'+friend.status+
+                    ' Subscription:'+friend.subscription)
+# -----------------------------------------------------------------------        
         else:
-            for JID in self.users:
-                self.notification_(JID, self.message, 'active')
-
+            if self.u_search in self.roster.keys():
+                user = self.roster[self.u_search]
+                print('- Jid: '+user.jid+
+                ' Username:'+user.username+
+                ' Show:'+user.show+
+                ' Status:'+user.status+
+                ' Subscription:'+user.subscription)
+            else:
+                print("Not found")
+        await asyncio.sleep(5)
         self.disconnect()
+# -------------------------------------------------------------------------
+    def wait_for_presences(self, pres):
+        self.received.add(pres['from'].bare)
+        if len(self.received) >= len(self.client_roster.keys()):
+            self.presences_received.set()
+        else:
+            self.presences_received.clear()
+
+
+
+class SendFile(slixmpp.ClientXMPP):
+    
+    def __init__(self, jid, password, receiver, filename):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.receiver = receiver    
+        self.file = open(filename, 'rb')
+        self.domain = domain
+        
+    
+        self.add_event_handler("session_start", self.start)
+        self.register_plugin('xep_0066')
+        self.register_plugin('xep_0071')
+        self.register_plugin('xep_0128')
+        self.register_plugin('xep_0363')
+
+    
+    
+    async def start(self, event):
+        try:
+    
+            proxy = await self['xep_0363'].handshake(self.receiver)
+            while True:
+                data = self.file.read(1048576)
+                if not data:
+                    break
+                await proxy.write(data)
+            proxy.transport.write_eof()
+    
+        except (IqError, IqTimeout) as e:
+            print("Error detected")
+        else:
+            print("File transfered correctly")
+        finally:
+    
+    
+            self.file.close()
+    
+            self.disconnect()
+
 
