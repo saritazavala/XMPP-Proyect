@@ -264,15 +264,6 @@ class subscribe(slixmpp.ClientXMPP):
 
 
 
-#This is just for comodidad :v
-# ------------------------
-class User():
-    def __init__(self, jid, show, status, subscription, username):
-        self.jid = jid
-        self.show = show
-        self.status = status
-        self.subscription = subscription
-        self.username = username
 
 
 '''
@@ -368,6 +359,16 @@ class GetRoster(slixmpp.ClientXMPP):
 # ----------------------------------------------------------------------------------
 #https://lab.louiz.org/poezio/slixmpp/-/blob/master/slixmpp/roster/multi.py
 # ----------------------------------------------------------------------------------
+
+#This is just for comodidad :v
+# ------------------------
+class User():
+    def __init__(self, jid, show, status, subscription, username):
+        self.jid = jid
+        self.show = show
+        self.status = status
+        self.subscription = subscription
+        self.username = username
 
 '''
                 CHAPTER 3.6

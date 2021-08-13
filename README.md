@@ -24,6 +24,24 @@ El proyecto consiste en implementar un cliente que soporte el protocolo XMPP. A 
 6. Enviar/recibir notificaciones
 7. Enviar/recibir archivos
 
+# Funcionamiento
+Si se desea crear una cuenta, se debe seguir la siguiente estructura:
 ```
-El proyecto debe estar definido con una interfaz de consola (CLI), estando totalmente por fuera el uso de cualquier librería para interfaces gráficas (GUI).
+user@alumchat.xyz
+```
+De esa manera es como se almacena un usuario
+## -----------------------------------------------------------------
+
+Para las opciones de:
+- Buscar un usuario y sus detalles
+- Enviar mensaje directo
+- Envio de mensaje
+
+Siempre se debe ingresar el usuario como
+```
+user@alumchat.xyz
+```
+Para los mensajes grupales, se debe crear una sala, la cual se crea de esta manera: 
+```
+name@conference.alumchat.xyz' 
 ```

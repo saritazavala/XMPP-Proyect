@@ -36,8 +36,7 @@ def online_user(event):
                 xmpp.add_friend(contact_jid)
                 print("You have a new friend")
             else:
-                print('Bad input')
-        
+                print("Inpunt invalido")
         
 
         elif opt == "3":
@@ -47,9 +46,7 @@ def online_user(event):
                 get_my_roster.connect()
                 get_my_roster.process(forever=False)
             else:
-                print("Bad Input")
-
-
+                print("Inpunt invalido")
 
 
         elif opt == "4":
@@ -61,14 +58,12 @@ def online_user(event):
                     my_priv.connect()
                     my_priv.process(forever=False)
                 else:
-                    print('Any message')
+                    print("No hay mensajes")
             else:
-                print('Bad input')
-        
-    
+                print("Inpunt invalido")
         
         
-        elif option == '5':
+        elif opt == '5':
             print(" Grupos")
             print(" 1. Crear Grupo")
             print(" 2. Unirse a grupo ")
@@ -134,16 +129,11 @@ def online_user(event):
             else:
                 print('Input invalido')
 
-
-     
-
-
-
 # --------------------------------------------------------------
 
         elif opt == "6":
             estados = ["En linea", "AFK", "Ocupado", "Restringido"]
-            print("Choose the state u want")
+            print("Elige el estado deseado")
             i = 1
             for opt in estados:
                 print(str(i)+'. '+opt)
