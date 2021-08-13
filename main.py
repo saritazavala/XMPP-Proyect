@@ -41,9 +41,9 @@ def online_user(event):
         
 
         elif opt == "3":
-            uname = input("Enter username u want to find")
-            if '@' in uname:
-                get_my_roster = GetRoster(xmpp.jid, xmpp.password,uname)
+            user = input("Ingrese el usuario a buscar: ")
+            if '@' in user:
+                get_my_roster = GetRoster(xmpp.jid, xmpp.password,user)
                 get_my_roster.connect()
                 get_my_roster.process(forever=False)
             else:
@@ -53,11 +53,11 @@ def online_user(event):
 
 
         elif opt == "4":
-            uname = input('Enter JID from the user:')
-            if '@alumchat.xyz' in uname:
+            user = input('Enter JID from the user:')
+            if '@alumchat.xyz' in user:
                 to_send = input('Message you want to send:')
                 if to_send:
-                    my_priv = PrivMsg(xmpp.jid, xmpp.password, uname, to_send)
+                    my_priv = PrivMsg(xmpp.jid, xmpp.password, user, to_send)
                     my_priv.connect()
                     my_priv.process(forever=False)
                 else:
@@ -128,10 +128,14 @@ def online_user(event):
                 else:
                     print("Input invalido")
                     continue
+            
             elif option_message == '5':
                 pass
             else:
                 print('Input invalido')
+
+
+     
 
 
 
@@ -149,17 +153,17 @@ def online_user(event):
             try:
                 show = estados[int(show_input)-1]
             except:
-                print('Bad input')
+                print('Ingres Invalido')
                 show = 'available'
             xmpp.set_presence(show, status)
             print("Estado Cambiado")
 
 
         elif opt == "7":
-            uname = input('To: ')
-            file = input('File Name: ')
-            if file and uname and '@' in uname:
-                send_file = SendFile(xmpp.jid, xmpp.password, uname, file, xmpp.boundjid.domain)
+            user = input('A: ')
+            file = input('Archivo: ')
+            if file and user and '@' in user:
+                send_file = SendFile(xmpp.jid, xmpp.password, user, file, xmpp.boundjid.domain)
                 send_file.connect()
                 send_file.process(forever=False)
 
