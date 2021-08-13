@@ -171,6 +171,13 @@ class Client(slixmpp.ClientXMPP):
         self.get_roster()
         time.sleep(3)
 
+
+
+'''
+        4.2.6 Example 14-7. (Page 225)
+https://slixmpp.readthedocs.io/_/downloads/en/slix-1.6.0/pdf/
+
+'''
 class PrivMsg(slixmpp.ClientXMPP):
     def __init__(self, jid, password, uname, msg):
         slixmpp.ClientXMPP.__init__(self, jid, password)
@@ -198,6 +205,18 @@ class PrivMsg(slixmpp.ClientXMPP):
     def new_subscribed(self, presence):
         print(presence.get_from()+' added you as a friend')
 
+'''
+---------------------------------------------------------------------------
+
+                CHAPTER 3.1
+        Slixmpp Quickstart - Echo Bot
+https://slixmpp.readthedocs.io/_/downloads/en/slix-1.6.0/pdf/
+
+            Also it was based in this example
+https://lab.louiz.org/poezio/slixmpp/-/blob/master/examples/register_account.py
+
+-------------------------------------------------------------------------
+'''
 
 class chat_group(slixmpp.ClientXMPP):
     
@@ -226,6 +245,7 @@ class chat_group(slixmpp.ClientXMPP):
             print("Timeout del server")
         self.disconnect()           
 
+
 class subscribe(slixmpp.ClientXMPP):
     
     def __init__(self, jid, password, to):
@@ -244,7 +264,7 @@ class subscribe(slixmpp.ClientXMPP):
 
 
 
-
+#This is just for comodidad :v
 # ------------------------
 class User():
     def __init__(self, jid, show, status, subscription, username):
@@ -254,7 +274,12 @@ class User():
         self.subscription = subscription
         self.username = username
 
-#Class for getting Rooster
+
+'''
+                    #Class for getting Roster
+https://lab.louiz.org/poezio/slixmpp/-/blob/master/slixmpp/roster/single.py
+
+'''
 class GetRoster(slixmpp.ClientXMPP):
     
     def __init__(self, jid, password, u_search = None):
@@ -340,7 +365,13 @@ class GetRoster(slixmpp.ClientXMPP):
         else:
             self.presences_received.clear()
 
+'''
+                CHAPTER 3.6
+        Enable HTTP Proxy Support
+https://slixmpp.readthedocs.io/_/downloads/en/slix-1.6.0/pdf/
 
+
+'''
 
 class SendFile(slixmpp.ClientXMPP):
     

@@ -105,7 +105,7 @@ def online_user(event):
             
            
             elif option_message == '3':
-                print(" Mandar mensaje a grupo ")
+                print(" Mandar mensaje a un grupo ")
                 name = input('Room URL: ')
                 msg = input('Mensaje: ')
                 if msg and name and '@conference.' in name:
@@ -152,14 +152,14 @@ def online_user(event):
                 print('Bad input')
                 show = 'available'
             xmpp.set_presence(show, status)
-            print('State was correctly changed')
+            print("Estado Cambiado")
 
 
         elif opt == "7":
             uname = input('To: ')
             file = input('File Name: ')
             if file and uname and '@' in uname:
-                send_file = SendFile(xmpp.jid, xmpp.password, uname, file, my_client_session.boundjid.domain)
+                send_file = SendFile(xmpp.jid, xmpp.password, uname, file, xmpp.boundjid.domain)
                 send_file.connect()
                 send_file.process(forever=False)
 
